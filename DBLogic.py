@@ -2,6 +2,7 @@ import sqlite3
 import hashlib
 import random
 import math
+
 # usuarios = [
 #     ("Alejandro García", "alejandro.garcia@example.com", "12345"),
 #     ("María López", "maria.lopez@example.com", "12345"),
@@ -91,19 +92,7 @@ def insertar_usuarios_en_db(usuarios):
 def insertar_valoraciones_en_db(valoraciones):
     conn = ConectarDB()  # Cambia a tu archivo de base de datos
     cursor = conn.cursor()
-    
-    # Crear la tabla si no existe
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Valoraciones (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        Usuario_ID INTEGER,
-        Pelicula_ID INTEGER,
-        Valoracion INTEGER NOT NULL,
-        FOREIGN KEY (Usuario_ID) REFERENCES Usuario(ID),
-        FOREIGN KEY (Pelicula_ID) REFERENCES Pelicula(ID)
-    )
-    """)
-    
+        
     # Insertar valoraciones
     for usuario_id, pelicula_id, valoracion in valoraciones:
         cursor.execute("""
@@ -114,3 +103,45 @@ def insertar_valoraciones_en_db(valoraciones):
     conn.commit()
     conn.close()
     print(f"{len(valoraciones)} valoraciones insertadas exitosamente.")
+def insertar_valoracion(usuario,pelicula,valoracion):
+
+    conn = ConectarDB()  # Cambia a tu archivo de base de datos
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO Valoraciones (Usuario_ID, Pelicula_ID, Valoracion)
+        VALUES (?, ?, ?)
+        """, (usuario_id, pelicula_id, valoracion))
+    conn.commit()
+    conn.close()
+def devolver_num_peliculas():
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ID FROM peliculas;")
+    datos = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return len(datos)
+def devolver_num_usrs():
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ID FROM Usuario;")
+    datos = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return len(datos)
+def devolver_valoraciones_matriz():
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("SELECT Usuario_ID, Pelicula_ID, Valoracion FROM Valoraciones;")
+    datos = cursor.fetchall()
+    matriz = [[0] * devolver_num_peliculas() for _ in range(devolver_num_usrs())]
+    for dato in datos:
+        usuario_id, pelicula_id, valoracion = dato
+        matriz[usuario_id-1][pelicula_id-1] = valoracion
+    for fila in matriz:
+        print(fila)
+    return matriz
+
+print(devolver_num_usrs())
+print(devolver_num_peliculas())
+devolver_valoraciones_matriz()

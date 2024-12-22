@@ -1,4 +1,5 @@
 import math
+from DBLogic import insertar_valoracion, devolver_valoraciones_matriz
 
 def CalcularCoef(usr):
     i = 0
@@ -50,3 +51,8 @@ def Prediccion(usuario,pelicula,vecinos,peliculas):
     print(linea)
     print(formulaDivisor)
     return ((dividendo/divisor) + CalcularCoef(peliculas[usuario]))    
+def InsertarValoracion(usr_id,pelicula_id,valoracion):  
+    if((valoracion <= 10) and (valoracion > 0)):
+        insertar_valoracion(usr_id,pelicula_id)
+    else:
+        print("Error al insertar valores")
