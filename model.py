@@ -1,5 +1,7 @@
 import math
 from DBLogic import insertar_valoracion, devolver_valoraciones_matriz
+import pandas as pd
+
 
 def CalcularCoef(usr):
     i = 0
@@ -46,13 +48,52 @@ def Prediccion(usuario,pelicula,vecinos,peliculas):
         dividendo = dividendo + (similitud) * (peliculas[vecinos[i]][pelicula] - CalcularCoef(peliculas[vecinos[i]]))
         divisor = divisor + similitud
         i=i+1
-    print(formulaDividendo)
+    # print(formulaDividendo)
     linea = len(formulaDividendo) * "-"
-    print(linea)
-    print(formulaDivisor)
+    # print(linea)
+    # print(formulaDivisor)
     return ((dividendo/divisor) + CalcularCoef(peliculas[usuario]))    
 def InsertarValoracion(usr_id,pelicula_id,valoracion):  
     if((valoracion <= 10) and (valoracion > 0)):
         insertar_valoracion(usr_id,pelicula_id)
     else:
         print("Error al insertar valores")
+
+"""
+Encuentra las N películas más similares a la película dada basada en similitudes de coseno.
+
+Args:
+    titulo (str): El título de la película base.
+    N (int): El número de películas similares a devolver.
+
+Returns:
+    DataFrame: Un DataFrame con las N películas más similares y sus puntuaciones de similitud.
+"""
+def topN_similitudCoseno(titulo, N):
+    # Cargar la matriz de similitud precalculada
+    cos_sim_df = pd.read_csv("cosine_similarity_matrix.csv", index_col=0)
+    
+    # Verificar que el título dado está en la matriz
+    if titulo not in cos_sim_df.index:
+        raise ValueError(f"El título '{titulo}' no está en la base de datos.")
+    
+    # Ordenar las películas por similitud respecto al título dado
+    similares = cos_sim_df[titulo].sort_values(ascending=False)
+    
+    # Crear una lista para almacenar resultados únicos
+    resultados = []
+    vistos = set()  # Para rastrear títulos ya incluidos
+    
+    # Iterar sobre las películas similares
+    for idx, similitud in similares.items():
+        if idx != titulo and idx not in vistos:  # Excluir la película misma y duplicados
+            resultados.append((idx, similitud))
+            vistos.add(idx)
+        if len(resultados) == N:  # Detener al alcanzar el número deseado
+            break
+    
+    # Convertir a DataFrame
+    resultados_df = pd.DataFrame(resultados, columns=["Título", "Similitud"])
+    return resultados_df
+
+print(topN_similitudCoseno("Captain America: The Winter Soldier", 10))
