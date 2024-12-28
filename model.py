@@ -1,7 +1,8 @@
 import math
-from DBLogic import insertar_valoracion, devolver_valoraciones_matriz
+from DBLogic import insertar_valoracion, LoginLogica, CrearUsuarioLogica, ObtenerValoracionesLogica, devolver_valoraciones_matriz, ObtenerDatosValoraciones
 import pandas as pd
-
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 def CalcularCoef(usr):
     i = 0
@@ -63,6 +64,53 @@ def InsertarValoracion(usr_id,pelicula_id,valoracion):
 Encuentra las N películas más similares a la película dada basada en similitudes de coseno.
 
 Args:
+    pelicula_id (int): El ID de la pelicula a utilizarse.
+    n_similares (int): Las  
+
+Returns:
+    list: Una lista con las N peliculas similares.
+"""
+def obtener_peliculas_similares(pelicula_id, n_similares=5):
+    valoraciones = ObtenerDatosValoraciones()
+    pelicula_usuario = {}
+    usuarios = set()
+    for pelicula, usuario, valoracion in valoraciones:
+        if pelicula not in pelicula_usuario:
+            pelicula_usuario[pelicula] = {}
+        pelicula_usuario[pelicula][usuario] = valoracion
+        usuarios.add(usuario)
+
+    usuarios = list(usuarios)
+    usuario_index = {usuario: idx for idx, usuario in enumerate(usuarios)}
+    peliculas = list(pelicula_usuario.keys())
+    pelicula_index = {pelicula: idx for idx, pelicula in enumerate(peliculas)}
+    matriz = np.zeros((len(peliculas), len(usuarios)))
+
+    for pelicula, ratings in pelicula_usuario.items():
+        for usuario, rating in ratings.items():
+            matriz[pelicula_index[pelicula]][usuario_index[usuario]] = rating
+
+    similitudes = cosine_similarity(matriz)
+    try:
+        pelicula_idx = pelicula_index[pelicula_id]
+        similitudes_pelicula = similitudes[pelicula_idx]
+        peliculas_similares_idx = np.argsort(similitudes_pelicula)[::-1][1:n_similares+1]
+        peliculas_similares = [peliculas[idx] for idx in peliculas_similares_idx]
+        return peliculas_similares
+    except KeyError:
+        return ['No se pudo encontrar valoraciones para la pelicula']
+
+similares = obtener_peliculas_similares(51,5)
+print(f"Películas similares a {1}: {similares}")
+similares = obtener_peliculas_similares(1,5)
+print(f"Películas similares a {1}: {similares}")
+
+
+
+"""
+Encuentra las N películas más similares a la película dada basada en similitudes de coseno.
+
+Args:
     titulo (str): El título de la película base.
     N (int): El número de películas similares a devolver.
 
@@ -96,4 +144,4 @@ def topN_similitudCoseno(titulo, N):
     resultados_df = pd.DataFrame(resultados, columns=["Título", "Similitud"])
     return resultados_df
 
-print(topN_similitudCoseno("Captain America: The Winter Soldier", 10))
+#print(topN_similitudCoseno("Captain America: The Winter Soldier", 10))

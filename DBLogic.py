@@ -141,6 +141,67 @@ def devolver_valoraciones_matriz():
     for fila in matriz:
         print(fila)
     return matriz
+def ObtenerDatosValoraciones():
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT Pelicula_ID, Usuario_ID, Valoracion
+        FROM Valoraciones
+    """)
+    valoraciones = cursor.fetchall()
+    conn.close()
+    return valoraciones
+def CrearUsuarioLogica(nombre, email, password):
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    # Generar hash de la contraseña
+    hash_pass = hashlib.sha512(password.encode('utf-8')).hexdigest()
+
+    cursor.execute("""
+    INSERT INTO Usuario (nombre, email, hash_pass)
+    VALUES (?, ?, ?)
+    """, (nombre, email, hash_pass))
+
+    conn.commit()
+    conn.close()
+def ObtenerValoracionesLogica(usuario_id):
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT Valoraciones.ID, Pelicula_ID, Valoracion 
+    FROM Valoraciones
+    WHERE Usuario_ID = ?
+    """, (usuario_id,))
+
+    valoraciones = cursor.fetchall()
+
+    conn.close()
+    return valoraciones
+def LoginLogica(email, password):
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    # Generar hash de la contraseña ingresada
+    hash_pass = hashlib.sha512(password.encode('utf-8')).hexdigest()
+
+    cursor.execute("""
+    SELECT ID, nombre, email 
+    FROM Usuario 
+    WHERE email = ? AND hash_pass = ?
+    """, (email, hash_pass))
+
+    usuario = cursor.fetchone()
+
+    conn.close()
+    
+    if usuario:
+        return usuario  # Retorna información del usuario si el login es exitoso
+    else:
+        return None  # Retorna None si el login falla
+
+
 
 print(devolver_num_usrs())
 print(devolver_num_peliculas())
