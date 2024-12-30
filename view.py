@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from model import Prediccion, SimilitudPearson
+from model import Prediccion, SimilitudPearson, obtener_peliculas_similares
 from DBLogic import devolver_valoraciones_matriz
 
 # Título de la aplicación
@@ -14,16 +14,12 @@ st.title("Sistema de Recomendación: TF-IDF y Similitud Colaborativa")
 def cargar_datos():
     return pd.read_csv("peliculas.csv")
 
-try:
-    datos = cargar_datos()
-except FileNotFoundError:
-    st.error("No se encontró el archivo 'peliculas.csv'. Asegúrate de que esté en la misma carpeta que este script.")
-    st.stop()
+datos = cargar_datos()
 
 st.sidebar.header("Opciones")
 opcion = st.sidebar.selectbox(
     "Selecciona una funcionalidad",
-    ("TF-IDF y Similitud Coseno", "Similitud Colaborativa")
+    ("TF-IDF y Similitud Coseno", "Similitud Colaborativa", "Buscar Películas Similares")
 )
 
 if opcion == "TF-IDF y Similitud Coseno":
@@ -46,11 +42,6 @@ if opcion == "TF-IDF y Similitud Coseno":
     cos_sim = cosine_similarity(tfidf_matrix)
     df_cos_sim = pd.DataFrame(cos_sim, index=peliculas["title"], columns=peliculas["title"])
 
-    # Verificar que no haya problemas en la matriz
-    if df_cos_sim.isnull().values.any():
-        st.error("Se encontraron valores nulos en la matriz de similitud. Verifica los datos de entrada.")
-        st.stop()
-
     st.write("**Matriz de Similitud de Coseno:**")
     st.dataframe(df_cos_sim)
 
@@ -62,6 +53,7 @@ if opcion == "TF-IDF y Similitud Coseno":
     st.dataframe(similares)
 
 elif opcion == "Similitud Colaborativa":
+    # Similitud colaborativa
     st.subheader("Sistema Colaborativo")
 
     # Obtener datos de la base de datos
@@ -71,9 +63,11 @@ elif opcion == "Similitud Colaborativa":
     st.write("**Matriz de Valoraciones:**")
     st.dataframe(pd.DataFrame(valoraciones))
 
+    # Seleccionar un usuario y una película para predicción
     usuario = st.number_input("Selecciona el usuario (indexado desde 0)", min_value=0, max_value=len(valoraciones)-1, value=0)
     pelicula = st.number_input("Selecciona la película (indexada desde 0)", min_value=0, max_value=len(valoraciones[0])-1, value=0)
 
+    # Vecinos (similares)
     vecinos = st.multiselect(
         "Selecciona los vecinos (usuarios similares)",
         options=list(range(len(valoraciones))),
@@ -84,6 +78,7 @@ elif opcion == "Similitud Colaborativa":
         prediccion = Prediccion(usuario, pelicula, vecinos, valoraciones)
         st.write(f"Predicción de la valoración para el Usuario {usuario} en la Película {pelicula}: {prediccion:.2f}")
 
+    # Mostrar similitud entre dos usuarios
     st.write("**Similitud de Pearson entre Usuarios:**")
     usuario1 = st.number_input("Usuario 1", min_value=0, max_value=len(valoraciones)-1, value=0)
     usuario2 = st.number_input("Usuario 2", min_value=0, max_value=len(valoraciones)-1, value=1)
@@ -91,3 +86,17 @@ elif opcion == "Similitud Colaborativa":
     if st.button("Calcular Similitud"):
         similitud = SimilitudPearson(valoraciones[usuario1], valoraciones[usuario2])
         st.write(f"Similitud de Pearson entre Usuario {usuario1} y Usuario {usuario2}: {similitud:.2f}")
+
+elif opcion == "Buscar Películas Similares":
+    st.subheader("Buscar Películas Similares por ID")
+
+    pelicula_id = st.number_input("Ingresa el ID de la película:", min_value=1, step=1)
+    num_similares = st.slider("Número de películas similares:", min_value=1, max_value=10, value=5)
+
+    if st.button("Buscar"):
+        similares = obtener_peliculas_similares(pelicula_id, num_similares)
+        if similares:
+            st.write(f"**Películas similares a la película con ID {pelicula_id}:**")
+            st.write(similares)
+        else:
+            st.write(f"No se encontraron películas similares para el ID {pelicula_id}.")
