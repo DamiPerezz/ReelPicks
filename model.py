@@ -48,7 +48,7 @@ def Prediccion(usuario, pelicula, vecinos, peliculas):
     return ((dividendo / divisor) + CalcularCoef(peliculas[usuario]))    
 
 def InsertarValoracion(usr_id, pelicula_id, valoracion):  
-    if (valoracion <= 10) and (valoracion > 0):
+    if (valoracion <= 5) and (valoracion > 0):
         insertar_valoracion(usr_id, pelicula_id, valoracion)
     else:
         print("Error al insertar valores")
@@ -88,3 +88,5 @@ def obtener_peliculas_similares(pelicula_id, n_similares=5):
         return peliculas_similares
     except KeyError:
         return [f"Error procesando similitudes para la película con ID {pelicula_id}."]
+
+obtener_peliculas_similares(2,5)

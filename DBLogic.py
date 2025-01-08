@@ -104,13 +104,12 @@ def insertar_valoraciones_en_db(valoraciones):
     conn.close()
     print(f"{len(valoraciones)} valoraciones insertadas exitosamente.")
 def insertar_valoracion(usuario,pelicula,valoracion):
-
     conn = ConectarDB()  # Cambia a tu archivo de base de datos
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO Valoraciones (Usuario_ID, Pelicula_ID, Valoracion)
         VALUES (?, ?, ?)
-        """, (usuario_id, pelicula_id, valoracion))
+        """, (usuario, pelicula, valoracion))
     conn.commit()
     conn.close()
 def devolver_num_peliculas():
@@ -141,6 +140,59 @@ def devolver_valoraciones_matriz():
     for fila in matriz:
         print(fila)
     return matriz
+def leer_nombre_peliculas():
+    """
+    Devuelve un diccionario donde las claves son los nombres de las películas
+    y los valores son los IDs de las mismas.
+    """
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ID, title FROM peliculas;")
+    datos = cursor.fetchall()
+    conn.close()
+    
+    # Convertir los resultados en un diccionario
+    peliculas_dict = {dato[1]: dato[0] for dato in datos}
+    return peliculas_dict
+def leer_peliculas_con_valoraciones():
+    """
+    Devuelve un diccionario donde las claves son los nombres de las películas
+    y los valores son los IDs de las mismas, pero solo incluye películas con valoraciones.
+    """
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT DISTINCT p.ID, p.title
+        FROM peliculas p
+        INNER JOIN Valoraciones v ON p.ID = v.Pelicula_ID
+    """)
+    datos = cursor.fetchall()
+    conn.close()
+    
+    # Convertir los resultados en un diccionario
+    peliculas_dict = {dato[1]: dato[0] for dato in datos}
+    return peliculas_dict
+def obtener_nombres_peliculas(peliculas_ids):
+    """
+    Dado un listado de IDs de películas, devuelve sus nombres.
+    """
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    # Formar la consulta para los IDs dados
+    placeholders = ", ".join("?" for _ in peliculas_ids)
+    query = f"SELECT title FROM peliculas WHERE ID IN ({placeholders})"
+
+    cursor.execute(query, peliculas_ids)
+    datos = cursor.fetchall()
+    conn.close()
+
+    # Extraer los nombres de las películas
+    nombres_peliculas = [dato[0] for dato in datos]
+    return nombres_peliculas
+
+
+#Valoraciones
 def ObtenerDatosValoraciones():
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -151,20 +203,6 @@ def ObtenerDatosValoraciones():
     valoraciones = cursor.fetchall()
     conn.close()
     return valoraciones
-def CrearUsuarioLogica(nombre, email, password):
-    conn = ConectarDB()
-    cursor = conn.cursor()
-
-    # Generar hash de la contraseña
-    hash_pass = hashlib.sha512(password.encode('utf-8')).hexdigest()
-
-    cursor.execute("""
-    INSERT INTO Usuario (nombre, email, hash_pass)
-    VALUES (?, ?, ?)
-    """, (nombre, email, hash_pass))
-
-    conn.commit()
-    conn.close()
 def ObtenerValoracionesLogica(usuario_id):
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -179,6 +217,22 @@ def ObtenerValoracionesLogica(usuario_id):
 
     conn.close()
     return valoraciones
+
+#Usuario
+def CrearUsuarioLogica(nombre, email, password):
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    # Generar hash de la contraseña
+    hash_pass = hashlib.sha512(password.encode('utf-8')).hexdigest()
+
+    cursor.execute("""
+    INSERT INTO Usuario (nombre, email, hash_pass)
+    VALUES (?, ?, ?)
+    """, (nombre, email, hash_pass))
+
+    conn.commit()
+    conn.close()
 def LoginLogica(email, password):
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -202,7 +256,7 @@ def LoginLogica(email, password):
         return None  # Retorna None si el login falla
 
 
-
-print(devolver_num_usrs())
-print(devolver_num_peliculas())
-devolver_valoraciones_matriz()
+print(leer_nombre_peliculas())
+# print(devolver_num_usrs())
+# print(devolver_num_peliculas())
+# devolver_valoraciones_matriz()
