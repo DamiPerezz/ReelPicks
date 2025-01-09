@@ -103,8 +103,8 @@ def insertar_valoraciones_en_db(valoraciones):
     conn.commit()
     conn.close()
     print(f"{len(valoraciones)} valoraciones insertadas exitosamente.")
-def insertar_valoracion(usuario,pelicula,valoracion):
-    conn = ConectarDB()  # Cambia a tu archivo de base de datos
+def insertar_valoracion(usuario, pelicula, valoracion):
+    conn = ConectarDB()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO Valoraciones (Usuario_ID, Pelicula_ID, Valoracion)
@@ -112,6 +112,8 @@ def insertar_valoracion(usuario,pelicula,valoracion):
         """, (usuario, pelicula, valoracion))
     conn.commit()
     conn.close()
+    print(f"Valoración guardada: Usuario {usuario}, Película {pelicula}, Valoración {valoracion}")
+
 def devolver_num_peliculas():
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -172,24 +174,31 @@ def leer_peliculas_con_valoraciones():
     # Convertir los resultados en un diccionario
     peliculas_dict = {dato[1]: dato[0] for dato in datos}
     return peliculas_dict
-def obtener_nombres_peliculas(peliculas_ids):
+def obtener_nombres_peliculas(pelicula_ids):
     """
-    Dado un listado de IDs de películas, devuelve sus nombres.
+    Dado un listado de IDs de películas, devuelve sus nombres en el mismo orden.
     """
+    if not pelicula_ids:
+        return []
+    
     conn = ConectarDB()
     cursor = conn.cursor()
 
-    # Formar la consulta para los IDs dados
-    placeholders = ", ".join("?" for _ in peliculas_ids)
-    query = f"SELECT title FROM peliculas WHERE ID IN ({placeholders})"
+    # Crear placeholders para la consulta
+    placeholders = ", ".join("?" for _ in pelicula_ids)
+    query = f"SELECT ID, title FROM peliculas WHERE ID IN ({placeholders})"
 
-    cursor.execute(query, peliculas_ids)
+    cursor.execute(query, pelicula_ids)
     datos = cursor.fetchall()
     conn.close()
 
-    # Extraer los nombres de las películas
-    nombres_peliculas = [dato[0] for dato in datos]
-    return nombres_peliculas
+    # Crear un diccionario para mapear IDs a nombres
+    peliculas_dict = {dato[0]: dato[1] for dato in datos}
+
+    # Devolver los nombres en el orden de pelicula_ids
+    return [peliculas_dict.get(pid, "Película no encontrada") for pid in pelicula_ids]
+
+
 
 
 #Valoraciones
@@ -208,15 +217,17 @@ def ObtenerValoracionesLogica(usuario_id):
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT Valoraciones.ID, Pelicula_ID, Valoracion 
+    SELECT Pelicula_ID, Valoracion 
     FROM Valoraciones
     WHERE Usuario_ID = ?
+    GROUP BY Pelicula_ID
+    HAVING MAX(ID)
     """, (usuario_id,))
 
     valoraciones = cursor.fetchall()
-
     conn.close()
     return valoraciones
+
 
 #Usuario
 def CrearUsuarioLogica(nombre, email, password):

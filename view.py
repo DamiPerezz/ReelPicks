@@ -72,6 +72,32 @@ if "usuario" in st.session_state:
         usuario_nombre = st.session_state.usuario["nombre"]
         st.write(f"Nombre: {usuario_nombre}")
 
+        # Retrieve and display user's ratings
+        from DBLogic import ObtenerValoracionesLogica, obtener_nombres_peliculas
+
+        valoraciones = ObtenerValoracionesLogica(usuario_id)
+
+        if valoraciones:
+            st.write("**Tus valoraciones:**")
+
+            # Extraer IDs y valoraciones
+            pelicula_ids = [v[0] for v in valoraciones]  # IDs de películas
+            ratings = [v[1] for v in valoraciones]      # Valoraciones
+
+            # Obtener nombres de películas
+            nombres_peliculas = obtener_nombres_peliculas(pelicula_ids)
+
+            # Crear el DataFrame para mostrar
+            ratings_data = [{"Película": nombre, "Valoración": rating} for nombre, rating in zip(nombres_peliculas, ratings)]
+            df_valoraciones = pd.DataFrame(ratings_data)
+
+            st.dataframe(df_valoraciones)
+        else:
+            st.write("No has realizado valoraciones aún.")
+
+
+
+
     elif opcion == "TF-IDF y Similitud Coseno":
         st.subheader("TF-IDF y Similitud por Coseno")
         peliculas = datos[["title", "synopsis"]].dropna().drop_duplicates(subset="title")
