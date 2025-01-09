@@ -101,8 +101,6 @@ if "usuario" in st.session_state:
     elif opcion == "TF-IDF y Similitud Coseno":
         st.subheader("TF-IDF y Similitud por Coseno")
         peliculas = datos[["title", "synopsis"]].dropna().drop_duplicates(subset="title")
-        st.write("**Películas disponibles:**")
-        st.dataframe(peliculas.head(10))
 
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.metrics.pairwise import cosine_similarity
@@ -111,8 +109,6 @@ if "usuario" in st.session_state:
         tfidf_matrix = vectorizer.fit_transform(peliculas["synopsis"])
         cos_sim = cosine_similarity(tfidf_matrix)
         df_cos_sim = pd.DataFrame(cos_sim, index=peliculas["title"], columns=peliculas["title"])
-        st.write("**Matriz de Similitud de Coseno:**")
-        st.dataframe(df_cos_sim)
 
         seleccion = st.selectbox("Selecciona una película para ver las más similares", peliculas["title"])
         similares = df_cos_sim[seleccion].sort_values(ascending=False).iloc[1:4]
@@ -120,7 +116,7 @@ if "usuario" in st.session_state:
         st.dataframe(similares)
 
     elif opcion == "Similitud Colaborativa":
-        st.subheader("Sistema Colaborativo")
+        st.subheader("Valorar Películas:")
 
         from DBLogic import devolver_valoraciones_matriz, leer_nombre_peliculas, insertar_valoracion
         from model import Prediccion, SimilitudPearson
@@ -149,8 +145,8 @@ if "usuario" in st.session_state:
 
         # Visualización de la matriz de valoraciones
         valoraciones = devolver_valoraciones_matriz()
-        st.write("**Matriz de Valoraciones:**")
-        st.dataframe(pd.DataFrame(valoraciones))
+
+        st.subheader("Similitud Colaborativa:")
 
         # Cálculo de predicción y similitud
         usuario = st.number_input("Selecciona el usuario (indexado desde 0)", min_value=0, max_value=len(valoraciones)-1, value=0)
@@ -163,7 +159,7 @@ if "usuario" in st.session_state:
             prediccion = Prediccion(usuario, pelicula, vecinos, valoraciones)
             st.write(f"Predicción de la valoración para el Usuario {usuario} en la Película {pelicula}: {prediccion:.2f}")
 
-        st.write("**Similitud de Pearson entre Usuarios:**")
+        st.subheader("Similitud de Pearson entre Usuarios:")
         usuario1 = st.number_input("Usuario 1", min_value=0, max_value=len(valoraciones)-1, value=0)
         usuario2 = st.number_input("Usuario 2", min_value=0, max_value=len(valoraciones)-1, value=1)
 
@@ -172,7 +168,7 @@ if "usuario" in st.session_state:
             st.write(f"Similitud de Pearson entre Usuario {usuario1} y Usuario {usuario2}: {similitud:.2f}")
 
     elif opcion == "Buscar Películas Similares":
-        st.subheader("Buscar Películas Similares por Nombre")
+        st.subheader("Buscar las N Películas más Similares (Basado en Valoraciones)")
 
         from DBLogic import leer_peliculas_con_valoraciones, obtener_nombres_peliculas
         from model import obtener_peliculas_similares
@@ -184,7 +180,6 @@ if "usuario" in st.session_state:
 
         if seleccion_pelicula:
             pelicula_id = peliculas_dict[seleccion_pelicula]
-            st.write(f"**ID de la película seleccionada:** {pelicula_id}")
 
             num_similares = st.slider("Número de películas similares:", min_value=1, max_value=10, value=5)
             similares_ids = None
