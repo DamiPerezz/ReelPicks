@@ -99,7 +99,8 @@ if "usuario" in st.session_state:
 
 
     elif opcion == "TF-IDF y Similitud Coseno":
-        st.subheader("TF-IDF y Similitud por Coseno")
+        st.subheader("(Basado en TF-IDF y Similitud por Coseno)")
+        st.subheader("Las 3 Películas más similares a: ")
         peliculas = datos[["title", "synopsis"]].dropna().drop_duplicates(subset="title")
 
         from sklearn.feature_extraction.text import TfidfVectorizer
