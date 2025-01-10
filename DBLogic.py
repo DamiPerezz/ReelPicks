@@ -103,16 +103,17 @@ def insertar_valoraciones_en_db(valoraciones):
     conn.commit()
     conn.close()
     print(f"{len(valoraciones)} valoraciones insertadas exitosamente.")
-def insertar_valoracion(usuario,pelicula,valoracion):
-
-    conn = ConectarDB()  # Cambia a tu archivo de base de datos
+def insertar_valoracion(usuario, pelicula, valoracion):
+    conn = ConectarDB()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO Valoraciones (Usuario_ID, Pelicula_ID, Valoracion)
         VALUES (?, ?, ?)
-        """, (usuario_id, pelicula_id, valoracion))
+        """, (usuario, pelicula, valoracion))
     conn.commit()
     conn.close()
+    print(f"Valoración guardada: Usuario {usuario}, Película {pelicula}, Valoración {valoracion}")
+
 def devolver_num_peliculas():
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -141,6 +142,66 @@ def devolver_valoraciones_matriz():
     for fila in matriz:
         print(fila)
     return matriz
+def leer_nombre_peliculas():
+    """
+    Devuelve un diccionario donde las claves son los nombres de las películas
+    y los valores son los IDs de las mismas.
+    """
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ID, title FROM peliculas;")
+    datos = cursor.fetchall()
+    conn.close()
+    
+    # Convertir los resultados en un diccionario
+    peliculas_dict = {dato[1]: dato[0] for dato in datos}
+    return peliculas_dict
+def leer_peliculas_con_valoraciones():
+    """
+    Devuelve un diccionario donde las claves son los nombres de las películas
+    y los valores son los IDs de las mismas, pero solo incluye películas con valoraciones.
+    """
+    conn = ConectarDB()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT DISTINCT p.ID, p.title
+        FROM peliculas p
+        INNER JOIN Valoraciones v ON p.ID = v.Pelicula_ID
+    """)
+    datos = cursor.fetchall()
+    conn.close()
+    
+    # Convertir los resultados en un diccionario
+    peliculas_dict = {dato[1]: dato[0] for dato in datos}
+    return peliculas_dict
+def obtener_nombres_peliculas(pelicula_ids):
+    """
+    Dado un listado de IDs de películas, devuelve sus nombres en el mismo orden.
+    """
+    if not pelicula_ids:
+        return []
+    
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    # Crear placeholders para la consulta
+    placeholders = ", ".join("?" for _ in pelicula_ids)
+    query = f"SELECT ID, title FROM peliculas WHERE ID IN ({placeholders})"
+
+    cursor.execute(query, pelicula_ids)
+    datos = cursor.fetchall()
+    conn.close()
+
+    # Crear un diccionario para mapear IDs a nombres
+    peliculas_dict = {dato[0]: dato[1] for dato in datos}
+
+    # Devolver los nombres en el orden de pelicula_ids
+    return [peliculas_dict.get(pid, "Película no encontrada") for pid in pelicula_ids]
+
+
+
+
+#Valoraciones
 def ObtenerDatosValoraciones():
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -151,6 +212,24 @@ def ObtenerDatosValoraciones():
     valoraciones = cursor.fetchall()
     conn.close()
     return valoraciones
+def ObtenerValoracionesLogica(usuario_id):
+    conn = ConectarDB()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT Pelicula_ID, Valoracion 
+    FROM Valoraciones
+    WHERE Usuario_ID = ?
+    GROUP BY Pelicula_ID
+    HAVING MAX(ID)
+    """, (usuario_id,))
+
+    valoraciones = cursor.fetchall()
+    conn.close()
+    return valoraciones
+
+
+#Usuario
 def CrearUsuarioLogica(nombre, email, password):
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -165,20 +244,6 @@ def CrearUsuarioLogica(nombre, email, password):
 
     conn.commit()
     conn.close()
-def ObtenerValoracionesLogica(usuario_id):
-    conn = ConectarDB()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    SELECT Valoraciones.ID, Pelicula_ID, Valoracion 
-    FROM Valoraciones
-    WHERE Usuario_ID = ?
-    """, (usuario_id,))
-
-    valoraciones = cursor.fetchall()
-
-    conn.close()
-    return valoraciones
 def LoginLogica(email, password):
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -202,7 +267,7 @@ def LoginLogica(email, password):
         return None  # Retorna None si el login falla
 
 
-
-print(devolver_num_usrs())
-print(devolver_num_peliculas())
-devolver_valoraciones_matriz()
+print(leer_nombre_peliculas())
+# print(devolver_num_usrs())
+# print(devolver_num_peliculas())
+# devolver_valoraciones_matriz()
