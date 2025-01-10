@@ -146,27 +146,6 @@ if "usuario" in st.session_state:
         # Visualización de la matriz de valoraciones
         valoraciones = devolver_valoraciones_matriz()
 
-        st.subheader("Similitud Colaborativa:")
-
-        # Cálculo de predicción y similitud
-        usuario = st.number_input("Selecciona el usuario (indexado desde 0)", min_value=0, max_value=len(valoraciones)-1, value=0)
-        pelicula = st.number_input("Selecciona la película (indexada desde 0)", min_value=0, max_value=len(valoraciones[0])-1, value=0)
-        vecinos = st.multiselect("Selecciona los vecinos (usuarios similares)",
-                                    options=list(range(len(valoraciones))),
-                                    default=[i for i in range(1, min(3, len(valoraciones)))])
-
-        if st.button("Calcular Predicción"):
-            prediccion = Prediccion(usuario, pelicula, vecinos, valoraciones)
-            st.write(f"Predicción de la valoración para el Usuario {usuario} en la Película {pelicula}: {prediccion:.2f}")
-
-        st.subheader("Similitud de Pearson entre Usuarios:")
-        usuario1 = st.number_input("Usuario 1", min_value=0, max_value=len(valoraciones)-1, value=0)
-        usuario2 = st.number_input("Usuario 2", min_value=0, max_value=len(valoraciones)-1, value=1)
-
-        if st.button("Calcular Similitud"):
-            similitud = SimilitudPearson(valoraciones[usuario1], valoraciones[usuario2])
-            st.write(f"Similitud de Pearson entre Usuario {usuario1} y Usuario {usuario2}: {similitud:.2f}")
-
     elif opcion == "Buscar Películas Similares":
         st.subheader("Buscar las N Películas más Similares (Basado en Valoraciones)")
 
