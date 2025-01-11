@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from DBLogic import LoginLogica, CrearUsuarioLogica
+from DBLogic import LoginLogica, CrearUsuarioLogica, UsuarioExistenteError
 
 # Título de la aplicación
 st.title("Sistema de Recomendación")
@@ -39,6 +39,8 @@ if opcion == "Iniciar sesión":
         else:
             st.error("Credenciales incorrectas.")
 
+
+
 elif opcion == "Registrar usuario":
     st.subheader("Registrar usuario")
     nombre = st.text_input("Nombre:")
@@ -49,9 +51,11 @@ elif opcion == "Registrar usuario":
         if nombre and email and password:
             try:
                 CrearUsuarioLogica(nombre, email, password)
-                st.success("Usuario registrado con éxito. Ahora puedes iniciar sesión.")
+                st.success("Usuario creado con exito!")
+            except UsuarioExistenteError as e:
+                st.error(e)  
             except Exception as e:
-                st.error(f"Error al registrar usuario: {e}")
+                st.error(f"Error inesperado: {e}")
         else:
             st.error("Por favor, completa todos los campos.")
 
@@ -118,8 +122,7 @@ if "usuario" in st.session_state:
     elif opcion == "Similitud Colaborativa":
         st.subheader("Valorar Películas:")
 
-        from DBLogic import devolver_valoraciones_matriz, leer_nombre_peliculas, insertar_valoracion
-        from model import Prediccion, SimilitudPearson
+        from DBLogic import devolver_valoraciones_matriz, leer_nombre_peliculas, insertar_valoracion, InsertarValoracionException
 
         # Cargar nombres de películas
         peliculas_dict = leer_nombre_peliculas()
@@ -140,9 +143,10 @@ if "usuario" in st.session_state:
         
                     insertar_valoracion(usuario_id, pelicula_id, valoracion)
                     st.success(f"Insertando {usuario_id} en pelicula {pelicula_id} con {valoracion}")
+                except InsertarValoracionException as e:
+                    st.error(e)
                 except Exception as e:
-                    st.error(f"Error al guardar la valoración: {e}")
-
+                    st.error(f"Error en inserción: {e}")
         # Visualización de la matriz de valoraciones
         valoraciones = devolver_valoraciones_matriz()
 

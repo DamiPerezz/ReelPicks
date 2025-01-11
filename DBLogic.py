@@ -103,17 +103,21 @@ def insertar_valoraciones_en_db(valoraciones):
     conn.commit()
     conn.close()
     print(f"{len(valoraciones)} valoraciones insertadas exitosamente.")
+class InsertarValoracionException(Exception):
+    """Excepción personalizada para usuarios existentes."""
+    pass
 def insertar_valoracion(usuario, pelicula, valoracion):
-    conn = ConectarDB()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO Valoraciones (Usuario_ID, Pelicula_ID, Valoracion)
-        VALUES (?, ?, ?)
-        """, (usuario, pelicula, valoracion))
-    conn.commit()
-    conn.close()
-    print(f"Valoración guardada: Usuario {usuario}, Película {pelicula}, Valoración {valoracion}")
-
+    if (valoracion <=5) and (valoracion>=1):
+        conn = ConectarDB()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO Valoraciones (Usuario_ID, Pelicula_ID, Valoracion)
+            VALUES (?, ?, ?)
+            """, (usuario, pelicula, valoracion))
+        conn.commit()
+        conn.close()
+    else:
+        raise InsertarValoracionException("Solo se admiten valoraciones entre 1 y 5")
 def devolver_num_peliculas():
     conn = ConectarDB()
     cursor = conn.cursor()
@@ -198,9 +202,6 @@ def obtener_nombres_peliculas(pelicula_ids):
     # Devolver los nombres en el orden de pelicula_ids
     return [peliculas_dict.get(pid, "Película no encontrada") for pid in pelicula_ids]
 
-
-
-
 #Valoraciones
 def ObtenerDatosValoraciones():
     conn = ConectarDB()
@@ -228,15 +229,24 @@ def ObtenerValoracionesLogica(usuario_id):
     conn.close()
     return valoraciones
 
-
+class UsuarioExistenteError(Exception):
+    """Excepción personalizada para usuarios existentes."""
+    pass
 #Usuario
 def CrearUsuarioLogica(nombre, email, password):
     conn = ConectarDB()
     cursor = conn.cursor()
 
+    # Comprobar si el usuario ya existe
+    cursor.execute("SELECT COUNT(*) FROM Usuario WHERE email = ?", (email,))
+    if cursor.fetchone()[0] > 0:
+        conn.close()
+        raise UsuarioExistenteError(f"El usuario con email '{email}' ya existe.")
+
     # Generar hash de la contraseña
     hash_pass = hashlib.sha512(password.encode('utf-8')).hexdigest()
 
+    # Insertar el nuevo usuario
     cursor.execute("""
     INSERT INTO Usuario (nombre, email, hash_pass)
     VALUES (?, ?, ?)
@@ -266,8 +276,5 @@ def LoginLogica(email, password):
     else:
         return None  # Retorna None si el login falla
 
-
-print(leer_nombre_peliculas())
-# print(devolver_num_usrs())
-# print(devolver_num_peliculas())
-# devolver_valoraciones_matriz()
+#CrearUsuarioLogica("Pedro", "pedrojimenez@gmail.com", "123456")
+#insertar_valoracion(24,34,3)
